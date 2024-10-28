@@ -157,6 +157,7 @@ VOCAB_FILE_NAME = {
 
 def get_huggingface_lm_model(
     pretrained_model_name: str,
+    model_type: str,
     config_dict: Optional[dict] = None,
     config_file: Optional[str] = None,
 ):
@@ -166,19 +167,15 @@ def get_huggingface_lm_model(
     Args:
         pretrained_mode_name: specify this to instantiate pretrained model from Huggingface,
             e.g. bert-base-cased. For entire list, see get_huggingface_pretrained_lm_models_list().
+        model_type: type of model
+            e.g. BertModel
+            ref https://gist.github.com/takahi-i/912d95e8cc9f7eaf9101fec779d5bf19#file-gistfile1-md
         config_dict: model configuration dictionary used to instantiate Huggingface model from scratch
         config_file: path to model configuration file used to instantiate Huggingface model from scratch
 
     Returns:
         BertModule
     """
-
-    try:
-        automodel = AutoModel.from_pretrained(pretrained_model_name)
-    except Exception as e:
-        raise ValueError(f"{pretrained_model_name} is not supported by HuggingFace. {e}")
-
-    model_type = type(automodel).__name__
 
     if model_type in HUGGINGFACE_MODELS:
         model_class = HUGGINGFACE_MODELS[model_type]["class"]

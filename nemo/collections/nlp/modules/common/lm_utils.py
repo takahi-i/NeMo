@@ -132,7 +132,8 @@ def get_lm_model(
         model = get_huggingface_lm_model(
             config_dict=config_dict,
             config_file=config_file,
-            pretrained_model_name=cfg.language_model.pretrained_model_name,
+            model_type=cfg.language_model.model_type,
+            pretrained_model_name=cfg.language_model.pretrained_model_name
         )
 
         if cfg.language_model.get("lm_checkpoint"):
