@@ -69,10 +69,10 @@ class BERTLMModel(ModelPT):
 
         super().__init__(cfg=cfg, trainer=trainer)
 
-        if cfg.get('language_model.config'):
-            config_dict = OmegaConf.to_container(cfg.language_model.config)
-        if cfg.get('language_model.config_file'):
+        if cfg.get('language_model') and cfg.language_model.get('config_file'):
             config_file = self.register_artifact('language_model.config_file', cfg.language_model.config_file)
+        elif cfg.get('language_model') and cfg.language_model.get("config"):
+            config_dict = OmegaConf.to_container(cfg.language_model.config)
 
         self.bert_model = get_lm_model(
             config_file=config_file, config_dict=config_dict, vocab_file=vocab_file, trainer=trainer, cfg=cfg,

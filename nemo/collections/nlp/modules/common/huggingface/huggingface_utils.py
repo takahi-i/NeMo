@@ -17,6 +17,7 @@ from typing import List, Optional
 
 from transformers import (
     AlbertConfig,
+    AutoConfig,
     AutoModel,
     BertConfig,
     CamembertConfig,
@@ -174,7 +175,11 @@ def get_huggingface_lm_model(
     """
 
     try:
-        automodel = AutoModel.from_pretrained(pretrained_model_name)
+        if pretrained_model_name:
+            automodel = AutoModel.from_pretrained(pretrained_model_name)
+        else:
+            config = AutoConfig.from_pretrained(pretrained_model_name)
+            automodel = AutoModel.from_config(config)
     except Exception as e:
         raise ValueError(f"{pretrained_model_name} is not supported by HuggingFace. {e}")
 
