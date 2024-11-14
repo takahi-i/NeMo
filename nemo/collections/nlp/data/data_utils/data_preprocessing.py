@@ -579,9 +579,14 @@ def get_vocab(file):
     return labels
 
 
-def find_newlines(contents):
+def find_newlines(contents, skip_prob=0.1):
     """
-    Finds all of the newline positions in a text file.
+    Finds all newline positions in a text file.
+    Randomly skips newlines with probability skip_prob.
+
+    Args:
+        contents: Binary contents of the file
+        skip_prob: Probability to skip a newline (default: 0.1)
     """
     start = 0
 
@@ -596,7 +601,7 @@ def find_newlines(contents):
                 .decode("utf-8", errors="ignore")
             )
 
-            if len(line.split()) > 0:
+            if len(line.split()) > 0 and random.random() > skip_prob:
                 yield start
 
             start = new_start + 1
