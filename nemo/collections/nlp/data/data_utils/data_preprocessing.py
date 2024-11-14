@@ -579,17 +579,7 @@ def get_vocab(file):
     return labels
 
 
-def find_newlines(contents, skip_prob=0.1, length_threshold=1000):
-    """
-    Finds all newline positions in a text file.
-    Randomly skips newlines with probability skip_prob, unless the combined length
-    of current and next line exceeds length_threshold.
-
-    Args:
-        contents: Binary contents of the file
-        skip_prob: Probability to skip a newline (default: 0.1)
-        length_threshold: If combined length of current and next line exceeds this, never skip (default: 1000)
-    """
+def find_newlines(contents, skip_prob=0.1, length_threshold=512):
     def clean_line(start_pos, end_pos):
         return (contents[start_pos:end_pos]
                 .replace(b"\xc2\x99", b" ")
@@ -598,13 +588,13 @@ def find_newlines(contents, skip_prob=0.1, length_threshold=1000):
 
     start = 0
     file_size = len(contents)
+    last_skipped = False
+
     while True:
         try:
-            # 現在の行の終わりを見つける
             current_end = contents.index(b"\n", start)
             current_line = clean_line(start, current_end)
 
-            # 次の行の長さを確認（ファイルの終わりに注意）
             next_start = current_end + 1
             if next_start < file_size:
                 next_end = contents.find(b"\n", next_start)
@@ -615,9 +605,13 @@ def find_newlines(contents, skip_prob=0.1, length_threshold=1000):
             else:
                 total_length = 0
 
-            # 合計長が閾値を超える場合、または確率的条件を満たす場合にyield
-            if total_length >= length_threshold or random.random() > skip_prob:
+            # 前回スキップした場合は必ずyield
+            # または合計長が閾値を超える場合、または確率的条件を満たす場合にyield
+            if last_skipped or total_length >= length_threshold or random.random() > skip_prob:
                 yield start
+                last_skipped = False
+            else:
+                last_skipped = True
 
             start = current_end + 1
 
