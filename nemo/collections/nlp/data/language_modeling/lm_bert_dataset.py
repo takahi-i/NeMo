@@ -138,6 +138,8 @@ class BertPretrainingDataset(Dataset):
 
         def get_document(filepath, offset, sentence_length):
             # Retrieve a specific line from a file and return as a document
+            if sentence_length <= 0:
+                return []
             if os.path.isdir(self.dataset):
                 filepath = os.path.join(self.dataset, filepath)
 
@@ -165,7 +167,7 @@ class BertPretrainingDataset(Dataset):
                     document = []
 
                 offset = sentence_indices[filename][line_idx]
-                next_offset = sentence_indices[filename][line_idx + 1]  if line_idx < len(self.sentence_indices[filename]) - 1 else offset
+                next_offset = sentence_indices[filename][line_idx + 1] if line_idx < len(self.sentence_indices[filename]) - 1 else offset
                 document += get_document(filename, offset, next_offset - offset)
 
             return document, line_idx
