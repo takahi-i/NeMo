@@ -610,6 +610,8 @@ def find_newlines(contents, skip_prob=0.1, max_length=512):
         except ValueError:
             break
 
+    if prev_skipped and prev_new_line < file_length:
+        yield prev_new_line
 
 def load_data_indices(idx_file: str, data_file: str, savename: str):
     """
