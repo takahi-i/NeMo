@@ -587,7 +587,8 @@ def find_newlines(contents, skip_prob=0.1, max_length=512):
     start = 0
     prev_skipped = False
 
-    while True:
+    file_length = len(contents)
+    while start < file_length:
         try:
             # index and split are much faster than Python for loops
             new_start = contents.index(b"\n", start)
@@ -598,16 +599,14 @@ def find_newlines(contents, skip_prob=0.1, max_length=512):
                 .decode("utf-8", errors="ignore")
             )
 
-            if len(line.split(), 1) > 0:
+            if len(line.split()) > 0:
                 if prev_new_line is None or prev_skipped or new_start - prev_new_line > max_length or random.random() > skip_prob:
                     yield start
                     prev_skipped = False
                     prev_new_line = start
-                    start = new_start + 1
                 else:
-                    start = new_start + 1
                     prev_skipped = True
-
+            start = new_start + 1
         except ValueError:
             break
 
