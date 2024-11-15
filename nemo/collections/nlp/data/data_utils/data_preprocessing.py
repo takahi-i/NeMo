@@ -579,41 +579,34 @@ def get_vocab(file):
     return labels
 
 
-def find_newlines(contents, skip_prob=0.1, length_threshold=512):
-    def clean_line(start_pos, end_pos):
-        return (contents[start_pos:end_pos]
-                .replace(b"\xc2\x99", b" ")
-                .replace(b"\xc2\xa0", b" ")
-                .decode("utf-8", errors="ignore"))
-
+def find_newlines(contents, skip_prob=0.1, max_length=512):
+    """
+    Finds the newline positions which are probabilistically selected in a text file.
+    """
+    prev_new_line = None  # None means begging of the contents
     start = 0
-    file_size = len(contents)
-    last_skipped = False
+    prev_skipped = False
 
     while True:
         try:
-            current_end = contents.index(b"\n", start)
-            current_line = clean_line(start, current_end)
+            # index and split are much faster than Python for loops
+            new_start = contents.index(b"\n", start)
+            line = (
+                contents[start:new_start]
+                .replace(b"\xc2\x99", b" ")
+                .replace(b"\xc2\xa0", b" ")
+                .decode("utf-8", errors="ignore")
+            )
 
-            next_start = current_end + 1
-            if next_start < file_size:
-                next_end = contents.find(b"\n", next_start)
-                if next_end == -1:
-                    next_end = file_size
-                next_line = clean_line(next_start, next_end)
-                total_length = len(current_line) + len(next_line)
-            else:
-                total_length = 0
-
-            # 前回スキップした場合は必ずyield
-            # または合計長が閾値を超える場合、または確率的条件を満たす場合にyield
-            if last_skipped or total_length >= length_threshold or random.random() > skip_prob:
-                yield start
-                last_skipped = False
-            else:
-                last_skipped = True
-
-            start = current_end + 1
+            if len(line.split(), 1) > 0:
+                if prev_new_line is None or prev_skipped or new_start - prev_new_line > max_length or random.random() > skip_prob:
+                    yield start
+                    prev_skipped = False
+                    prev_new_line = start
+                    start = new_start + 1
+                else:
+                    start = new_start + 1
+                    prev_skipped = True
 
         except ValueError:
             break
