@@ -80,7 +80,7 @@ class BertPretrainingDataset(Dataset):
             for filename in tqdm(filenames):
                 with open(filename, "rb") as f:
                     contents = f.read()
-                    newline_indices = find_newlines(contents)
+                    newline_indices = find_newlines(contents, newline_skip_prob=0.1, max_length=max_seq_length)
 
                 if os.path.isdir(data_dir):
                     # Only keep the parts of the filepath that are invariant to
