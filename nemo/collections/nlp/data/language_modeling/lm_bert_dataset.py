@@ -95,15 +95,6 @@ class BertPretrainingDataset(Dataset):
                 pickle.dump(sentence_indices, f)
 
 
-        # create content length dict
-        content_lengths = {}
-        for filename in [data_file]:
-            with open(filename, "rb") as f:
-                contents = f.read()
-            if os.path.isdir(data_dir):
-                filename = os.path.basename(filename)
-            content_lengths[filename] = len(contents)
-
         corpus_size = 0
         empty_files = []
 
@@ -124,7 +115,6 @@ class BertPretrainingDataset(Dataset):
         self.mask_probability = mask_prob
         self.max_seq_length = max_seq_length
         self.sentence_indices = sentence_indices
-        self.content_lengths = content_lengths
         self.vocab_size = self.tokenizer.vocab_size
         self.short_seq_prob = short_seq_prob
         self.seq_a_ratio = seq_a_ratio
@@ -176,8 +166,8 @@ class BertPretrainingDataset(Dataset):
                     document = []
 
                 offset = sentence_indices[filename][line_idx]
-                next_offset = sentence_indices[filename][line_idx + 1] if line_idx < len(self.sentence_indices[filename]) - 1 else self.content_lengths[filename]
-                document += get_document(filename, offset, next_offset - offset)
+                document_length = sentence_indices[filename][line_idx + 1] - offset if line_idx < len(self.sentence_indices[filename]) - 1 else -1
+                document += get_document(filename, offset, document_length)
 
             return document, line_idx
 
@@ -185,8 +175,8 @@ class BertPretrainingDataset(Dataset):
         a_filename = random.choice(self.filenames)
         a_line_idx = random.randrange(len(self.sentence_indices[a_filename]))
         a_line_offset = self.sentence_indices[a_filename][a_line_idx]
-        a_line_next_offset = self.sentence_indices[a_filename][a_line_idx+1] if a_line_idx < len(self.sentence_indices[a_filename]) - 1 else self.content_lengths[a_filename]
-        a_document = get_document(a_filename, a_line_offset, a_line_next_offset - a_line_offset)
+        a_line_length = self.sentence_indices[a_filename][a_line_idx+1] - a_line_offset if a_line_idx < len(self.sentence_indices[a_filename]) - 1 else -1
+        a_document = get_document(a_filename, a_line_offset, a_line_length)
         a_document, a_line_idx = match_target_seq_length(
             a_document, target_seq_length_a, a_filename, a_line_idx, self.sentence_indices
         )
@@ -220,8 +210,8 @@ class BertPretrainingDataset(Dataset):
 
         is_next = int(not take_random_b)
         b_line_pos = self.sentence_indices[b_filename][b_line_idx]
-        b_line_next_pos = self.sentence_indices[b_filename][b_line_idx+1] if b_line_idx < len(self.sentence_indices[b_filename]) - 1 else self.content_lengths[b_filename]
-        b_document = get_document(b_filename, b_line_pos, b_line_next_pos - b_line_pos)
+        b_line_length = self.sentence_indices[b_filename][b_line_idx+1] - b_line_pos if b_line_idx < len(self.sentence_indices[b_filename]) - 1 else -1
+        b_document = get_document(b_filename, b_line_pos, b_line_length)
         b_document, b_line_idx = match_target_seq_length(
             b_document, target_seq_length_b, b_filename, b_line_idx, self.sentence_indices
         )
