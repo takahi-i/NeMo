@@ -25,6 +25,7 @@ from tqdm import tqdm
 
 from nemo.collections.nlp.data.data_utils.data_preprocessing import find_newlines, load_data_indices
 from nemo.core.classes import Dataset
+from nemo.utils import logging
 
 __all__ = ['BertPretrainingDataset', 'BertPretrainingPreprocessedDataloader']
 
@@ -79,7 +80,7 @@ class BertPretrainingDataset(Dataset):
             for filename in tqdm(filenames):
                 with open(filename, "rb") as f:
                     contents = f.read()
-                    newline_indices = find_newlines(contents)
+                    newline_indices = find_newlines(contents, newline_skip_prob=0.1, max_length=max_seq_length)
 
                 if os.path.isdir(data_dir):
                     # Only keep the parts of the filepath that are invariant to
@@ -92,6 +93,7 @@ class BertPretrainingDataset(Dataset):
             # Save sentence indices so we don't have to do this again
             with open(sentence_idx_file, "wb") as f:
                 pickle.dump(sentence_indices, f)
+
 
         corpus_size = 0
         empty_files = []
@@ -135,14 +137,14 @@ class BertPretrainingDataset(Dataset):
         target_seq_length_a = int(round(target_seq_length * self.seq_a_ratio))
         target_seq_length_b = target_seq_length - target_seq_length_a
 
-        def get_document(filepath, offset):
+        def get_document(filepath, offset, sentence_length):
             # Retrieve a specific line from a file and return as a document
             if os.path.isdir(self.dataset):
                 filepath = os.path.join(self.dataset, filepath)
 
             with open(filepath, "rb") as f:
                 f.seek(offset)
-                doc_text = f.readline()[:-1].decode("utf-8", errors="ignore")
+                doc_text = f.read(sentence_length).decode("utf-8", errors="ignore")
                 document = self.tokenizer.text_to_ids(doc_text)
 
             return document
@@ -164,7 +166,8 @@ class BertPretrainingDataset(Dataset):
                     document = []
 
                 offset = sentence_indices[filename][line_idx]
-                document += get_document(filename, offset)
+                document_length = sentence_indices[filename][line_idx + 1] - offset if line_idx < len(self.sentence_indices[filename]) - 1 else -1
+                document += get_document(filename, offset, document_length)
 
             return document, line_idx
 
@@ -172,7 +175,8 @@ class BertPretrainingDataset(Dataset):
         a_filename = random.choice(self.filenames)
         a_line_idx = random.randrange(len(self.sentence_indices[a_filename]))
         a_line_offset = self.sentence_indices[a_filename][a_line_idx]
-        a_document = get_document(a_filename, a_line_offset)
+        a_line_length = self.sentence_indices[a_filename][a_line_idx+1] - a_line_offset if a_line_idx < len(self.sentence_indices[a_filename]) - 1 else -1
+        a_document = get_document(a_filename, a_line_offset, a_line_length)
         a_document, a_line_idx = match_target_seq_length(
             a_document, target_seq_length_a, a_filename, a_line_idx, self.sentence_indices
         )
@@ -206,7 +210,8 @@ class BertPretrainingDataset(Dataset):
 
         is_next = int(not take_random_b)
         b_line_pos = self.sentence_indices[b_filename][b_line_idx]
-        b_document = get_document(b_filename, b_line_pos)
+        b_line_length = self.sentence_indices[b_filename][b_line_idx+1] - b_line_pos if b_line_idx < len(self.sentence_indices[b_filename]) - 1 else -1
+        b_document = get_document(b_filename, b_line_pos, b_line_length)
         b_document, b_line_idx = match_target_seq_length(
             b_document, target_seq_length_b, b_filename, b_line_idx, self.sentence_indices
         )

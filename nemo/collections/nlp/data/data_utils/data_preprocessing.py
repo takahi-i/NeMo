@@ -579,30 +579,33 @@ def get_vocab(file):
     return labels
 
 
-def find_newlines(contents):
+def find_newlines(contents, newline_skip_prob=0.1, max_length=512):
     """
-    Finds all of the newline positions in a text file.
+    Finds the newline positions which are probabilistically selected in a text file.
     """
+    prev_new_line = None  # None means begging of the contents
     start = 0
+    prev_skipped = False
 
-    while True:
-        try:
-            # index and split are much faster than Python for loops
-            new_start = contents.index(b"\n", start)
-            line = (
-                contents[start:new_start]
-                .replace(b"\xc2\x99", b" ")
-                .replace(b"\xc2\xa0", b" ")
-                .decode("utf-8", errors="ignore")
-            )
-
-            if len(line.split()) > 0:
+    while start < len(contents):
+        # index and split are much faster than Python for loops
+        new_start = contents.find(b"\n", start)
+        if new_start == -1:
+            new_start = len(contents)
+        line = (
+            contents[start:new_start]
+            .replace(b"\xc2\x99", b" ")
+            .replace(b"\xc2\xa0", b" ")
+            .decode("utf-8", errors="ignore")
+        )
+        if len(line.split()) > 0:
+            if prev_new_line is None or prev_skipped or new_start - prev_new_line > max_length or random.random() > newline_skip_prob:
                 yield start
-
-            start = new_start + 1
-
-        except ValueError:
-            break
+                prev_skipped = False
+                prev_new_line = start
+            else:
+                prev_skipped = True
+        start = new_start + 1
 
 
 def load_data_indices(idx_file: str, data_file: str, savename: str):
