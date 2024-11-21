@@ -94,6 +94,12 @@ class BertPretrainingDataset(Dataset):
             with open(sentence_idx_file, "wb") as f:
                 pickle.dump(sentence_indices, f)
 
+        # sentence_indicesのサイズを8の倍数に調整
+        for filename in sentence_indices:
+            current_length = len(sentence_indices[filename])
+            if current_length % 8 != 0:
+                new_length = (current_length // 8) * 8  # 8の倍数になるように切り捨て
+                sentence_indices[filename] = array.array("Q", sentence_indices[filename][:new_length])
 
         corpus_size = 0
         empty_files = []
