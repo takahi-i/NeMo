@@ -115,6 +115,10 @@ class BertPretrainingDataset(Dataset):
         for filename in empty_files:
             del sentence_indices[filename]
 
+        for filename in sentence_indices:
+            logging.info(f"size of {filename}: {len(sentence_indices[filename])}")
+        logging.info(f"corpus_size: {corpus_size}")
+
         self.corpus_size = corpus_size
         self.dataset = data_dir
         self.filenames = list(sentence_indices.keys())
