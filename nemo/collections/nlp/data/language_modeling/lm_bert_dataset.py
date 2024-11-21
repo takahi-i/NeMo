@@ -97,8 +97,8 @@ class BertPretrainingDataset(Dataset):
         # sentence_indicesのサイズを8の倍数に調整
         for filename in sentence_indices:
             current_length = len(sentence_indices[filename])
-            if current_length % 8 != 0:
-                new_length = (current_length // 8) * 8  # 8の倍数になるように切り捨て
+            if current_length % 16 != 0:
+                new_length = (current_length // 16) * 16  # 16の倍数になるように切り捨て
                 sentence_indices[filename] = array.array("Q", sentence_indices[filename][:new_length])
 
         corpus_size = 0
