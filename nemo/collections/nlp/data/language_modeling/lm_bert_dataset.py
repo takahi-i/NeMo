@@ -88,7 +88,7 @@ class BertPretrainingDataset(Dataset):
                     filename = os.path.basename(filename)
 
                 # In python, arrays are much more space-efficient than lists
-                sentence_indices[filename] = array.array("I", newline_indices)
+                sentence_indices[filename] = array.array("Q", newline_indices)
 
             # Save sentence indices so we don't have to do this again
             with open(sentence_idx_file, "wb") as f:
